@@ -3,6 +3,8 @@ Makes your Lovable code into hugable for users.
 
 This doc/system can be used by **non-technical users, rapid prototypers, and senior developers**.
 
+> **Need help?** Start with **[QUICKHELP.md](./QUICKHELP.md)** — it covers common tasks, scenarios, and FAQ with links to detailed rules.
+
 ## Who Should Use This System?
 
 This system is for you if you want to build a Lovable app that is:
@@ -10,7 +12,7 @@ This system is for you if you want to build a Lovable app that is:
 - ✅ **Easy to extend** - New features plug into existing contracts
 - ✅ **Easy for future developers to understand** - Self-documenting architecture with compliance checkpoints
 
-**Multi-user (tenant) ready:** This system supports opening your app to friends, family, and other users when you're ready. You don't have to decide now; the multi-user data protection patterns are built in from day one, so you can mor easily scale from personal use to multi-user SaaS without a rewrite.
+**Multi-user (tenant) ready:** This system supports opening your app to friends, family, and other users when you're ready. You don't have to decide now; the multi-user data protection patterns are built in from day one, so you can more easily scale from personal use to multi-user SaaS without a rewrite.
 
 ## How to Use This System
 
@@ -27,46 +29,45 @@ Please include AGENTS.md in the repo and follow the checklist-driven
 architecture in AGENTS.md for all code you generate.
 ```
 
-**Step 3: Audit First Draft**.  
-Request a compliance audit against the compliance matrix:
+**Step 3: Audit First Draft**.
+Request a compliance audit against the compliance dashboard:
 ```
-Please audit the code against Section 0.1 (Compliance Matrix) in AGENTS.md
+Please audit the code against the Compliance Matrix in DASHBOARD.md
 and report any violations.
 ```
-See: [Section 0.1 (Compliance Matrix)](./AGENTS.md#01-compliance-matrix-living-dashboard)
+See: [DASHBOARD.md — Compliance Matrix](./DASHBOARD.md#compliance-matrix)
 
 **Step 4: Each Build Cycle**.
-Reset checkboxes in Section 0.1 and update "Last Audited" date in AGENTS.md header.
+Reset checkboxes in [DASHBOARD.md](./DASHBOARD.md) and update the header dates.
 
 **Step 5: When Bugs Pile Up**
 If behavior feels inconsistent or bugs keep recurring, re-audit before adding more features:
 ```
-Please audit the current codebase against AGENTS.md Section 0.1
-(Compliance Matrix). Flag violations and fix them in priority order
+Please audit the current codebase against the Compliance Matrix in
+DASHBOARD.md. Flag violations and fix them in priority order
 (security > data integrity > UX).
 ```
 This often catches the root cause — a broken contract upstream — faster than chasing individual bugs.
 
 ### With Other AI Assistants (Cursor, GitHub Copilot, Augment, etc.):
-1. **Setup:** Add AGENTS.md to your project root
+1. **Setup:** Add AGENTS.md, DASHBOARD.md, and QUICKHELP.md to your project root
 2. **During development:** Reference it in prompts: "Follow architecture rules in AGENTS.md"
-3. **Before commits:** Manually verify compliance using Section 0.1 checklist
-4. **When breaking rules:** Document in Section 13 (Changelog)
+3. **Before commits:** Verify compliance using [DASHBOARD.md](./DASHBOARD.md) checklist
+4. **When breaking rules:** Document in [CHANGELOG.md](./CHANGELOG.md) per [AGENTS.md §13](./AGENTS.md#13-violations---changelogmd-policy)
 
-See [AGENTS.md Section 0](./AGENTS.md#0-how-to-use-this-doc) for detailed workflow.
+See [QUICKHELP.md](./QUICKHELP.md) for common tasks or [AGENTS.md §0](./AGENTS.md#0-how-to-use-this-doc) for detailed workflow.
 
-## Architecture
+## Documentation
 
-This system follows a **checklist-driven architecture** approach. All architectural decisions, design patterns, and development workflows are documented in:
+This system is organized into layered documents. Start at the top and go deeper only when needed.
 
-📋 **[AGENTS.md](./AGENTS.md)** - Checklist-Driven Architecture Guide for Lovable and other AI agents.
-
-The AGENTS.md document provides:
-- Pre-build, build, and post-build checklists
-- SOLID principles applied to this stack
-- State management patterns
-- CMS content management guidelines
-- Continuous audit and improvement processes
+| Document | Purpose |
+|----------|---------|
+| 📖 **[QUICKHELP.md](./QUICKHELP.md)** | First stop — common tasks, scenarios, and FAQ |
+| 📊 **[DASHBOARD.md](./DASHBOARD.md)** | Build cycle compliance status and architecture snapshot |
+| 📋 **[AGENTS.md](./AGENTS.md)** | Full architecture rules and checklists |
+| 📝 **[CHANGELOG.md](./CHANGELOG.md)** | Version history, violations, and lessons learned |
+| 📚 **[REFERENCES.md](./REFERENCES.md)** | Source material for design principles |
 
 ## Technical Assumptions
 
@@ -114,8 +115,8 @@ This architecture guide is built on **proven software engineering principles** t
 - Normalized error categories for consistent UX
 
 ### **Continuous Verification**
-- Compliance matrix (Section 0.1) provides measurable checkpoints
-- Violations log (Section 13) creates a learning feedback loop
+- [Compliance matrix](./DASHBOARD.md#compliance-matrix) provides measurable checkpoints
+- [Violations log](./CHANGELOG.md) creates a learning feedback loop
 - Automated + manual checks prevent architectural drift
 
 **Result:** Maintainable, testable, and scalable codebases that AI assistants and human developers can confidently extend without introducing technical debt.
@@ -146,11 +147,11 @@ supabase db diff
 
 **Code:** This project's code is available under standard open-source terms.
 
-**Documentation (AGENTS.md):**
+**Documentation (AGENTS.md, DASHBOARD.md, QUICKHELP.md):**
 Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (Creative Commons Attribution 4.0 International)
 © 2026 Hypercart DBA Neochrome, Inc.
 
-When sharing or adapting AGENTS.md, you must:
+When sharing or adapting these documents, you must:
 - Credit "Hypercart DBA Neochrome, Inc." as the original author
 - Provide a link to the CC BY 4.0 license
 - Indicate if changes were made
@@ -158,4 +159,4 @@ When sharing or adapting AGENTS.md, you must:
 
 ---
 
-For detailed architectural guidelines and development checklists, see **[AGENTS.md](./AGENTS.md)**.
+For help, start with **[QUICKHELP.md](./QUICKHELP.md)**. For full architecture rules, see **[AGENTS.md](./AGENTS.md)**.

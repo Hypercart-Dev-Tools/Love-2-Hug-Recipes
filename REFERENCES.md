@@ -1,6 +1,6 @@
 # References
 
-The resources below informed the design principles codified in [AGENTS.md](./AGENTS.md). Each article covers one or more of the foundational concepts — SOLID, DRY, KISS, YAGNI — that the checklist-driven architecture translates into concrete, enforceable rules for a Lovable/React/Supabase stack.
+The resources below informed the design principles codified in [AGENTS.md](./AGENTS.md). Each article covers one or more of the foundational computer science concepts — SOLID, DRY, KISS, YAGNI — that the checklist-driven architecture translates into concrete, enforceable rules for a Lovable/React/Supabase stack.
 
 We primarily include SOLID and DRY references in our system because they are the most widely applicable to the Lovable/React/Supabase stack but all the principles overlap each other.
 

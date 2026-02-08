@@ -1,8 +1,8 @@
 # AGENTS.md - Checklist-Driven Architecture Guide (Lovable TS/JS/React/Vite/Supabase)
-**Version:** 1.3  
-**Last Updated:** 2026-02-08  
-**Last Audited:** _not yet audited_  
-**Purpose:** Execution checklist for three phases: pre-build, post-first-build, and continuous audit/fix/iterate.  
+**Version:** 1.4
+**Last Updated:** 2026-02-08
+**Last Audited:** _not yet audited_
+**Purpose:** Canonical architecture rules and checklists. For quick help, start with [QUICKHELP.md](./QUICKHELP.md). For build cycle status, see [DASHBOARD.md](./DASHBOARD.md).
 
 ---
 
@@ -28,32 +28,16 @@
 ## 0) How to Use This Doc
 - Treat each section as a pass/fail checklist.
 - Do not mark items done without code evidence (files, tests, policies, or logs).
-- Follow order: pre-build -> build contract -> post-build -> continuous loop.
-- **Compliance Matrix (Section 0.1)** is the living dashboard — check it first.
-- **New build cycle?** Reset all matrix checkboxes to `[ ]` and update `Last Audited` in the header.
+- Follow order: pre-build → build contract → post-build → continuous loop.
+- **Need quick help?** Start with [QUICKHELP.md](./QUICKHELP.md).
+- **Checking compliance status?** See [DASHBOARD.md](./DASHBOARD.md).
+- **New build cycle?** Reset the dashboard checkboxes and update dates in [DASHBOARD.md](./DASHBOARD.md).
 
-## 0.1) Compliance Matrix (Living Dashboard)
+## 0.1) Compliance Matrix
 
-> Scan this table to see current build-cycle status. Each row maps to a numbered section.
-> Mark `[x]` only with code evidence. Reset all to `[ ]` at the start of each build cycle.
+The compliance matrix tracks pass/fail status for each architecture section across build, QA, and manual testing phases. It is maintained as a living dashboard in a dedicated file.
 
-| # | Section | Verify | Build | QA | Human |
-|---|---------|--------|:-----:|:--:|:-----:|
-| 1 | Pre-Build | Domains, folders, tenant model, typed contracts defined | [ ] | [ ] | [ ] |
-| 2 | Build Contract | `UnifiedLayout` on all pages, no deprecated patterns | [ ] | [ ] | [ ] |
-| 3 | CMS Content | All CMS via `useCmsConfig` + service layer, no direct Supabase | [ ] | [ ] | [ ] |
-| 4 | State Mgmt | Auth via `useAuthStore`, tenant context available, no duplicate state | [ ] | [ ] | [ ] |
-| 5 | Design Rules | DRY + SOLID + state hygiene applied | [ ] | [ ] | [ ] |
-| 6 | FSM | Correct pattern per complexity tier, no impossible states | [ ] | [ ] | [ ] |
-| 7 | Observability | Async boundaries emit telemetry, errors normalize to `AppError` | [ ] | [ ] | [ ] |
-| 8 | Post Build | `typecheck`/`lint`/`test` green, journeys pass, RLS + tenant isolation verified | [ ] | [ ] | [ ] |
-| 9 | Continuous Audit | Runtime signals reviewed, fixes shipped, changelog updated | [ ] | [ ] | [ ] |
-| 10 | RLS | `app_config` public read, admin-only write, policies current | [ ] | [ ] | [ ] |
-| 10.5 | Multi-Tenant | Tenant isolation enforced, cross-tenant access blocked, 100% RLS coverage | [ ] | [ ] | [ ] |
-| 11 | Theme | Extension points untouched, no premature branding | [ ] | [ ] | [ ] |
-| 12 | Key Paths | File structure matches contracted paths | [ ] | [ ] | [ ] |
-
-**Column key:** Build = 1st build pass | QA = post-build code review | Human = manual testing
+→ **[DASHBOARD.md — Compliance Matrix](./DASHBOARD.md#compliance-matrix)**
 
 ## 0.2) AI Agent Working Guardrails
 - Make one change cluster at a time, verify it, then proceed.
@@ -76,13 +60,11 @@
 - Re-run the failing command, then rerun the full verification set.
 - If unresolved, revert only your latest change chunk and retry with a narrower diff.
 
-## 0.5) Current Architecture Snapshot (Update Per Release)
-- Layout/navigation: unified layout system via `src/components/layouts/` (`UnifiedLayout`, `UnifiedSidebar`).
-- CMS: `app_config` keys `tos_html` and `footer_html`, accessed via `useCmsConfig` + `src/services/cms-config.ts`.
-- State: auth in `src/stores/auth-store.ts`, events in `src/stores/events-store.ts`.
-- Data security: RLS on `app_config` and tenant-scoped tables; tenant isolation enforced by policy.
-- Observability baseline: structured async boundary logging + normalized `AppError` contract.
-- Project snapshot fields to maintain each release: active routes, key tables, edge functions, and open architecture decisions.
+## 0.5) Current Architecture Snapshot
+
+The architecture snapshot captures the current state of layout, CMS, state management, security, and observability decisions. It is updated after each release.
+
+→ **[DASHBOARD.md — Architecture Snapshot](./DASHBOARD.md#current-architecture-snapshot)**
 
 ## 1) Pre-Build Checklist (Before First Feature)
 - Define domain boundaries: auth, monitoring/events, admin CMS, shared UI, **tenant isolation**.
@@ -280,5 +262,6 @@ Do not log rule violations in this file. Log each violation and lesson in `CHANG
 `- YYYY-MM-DD: [Section X] reason -> outcome -> next action #lessonslearned`
 
 ## 14) Revision History (This Document)
+- 2026-02-08 (v1.4): Extracted Compliance Matrix and Architecture Snapshot to [DASHBOARD.md](./DASHBOARD.md); added [QUICKHELP.md](./QUICKHELP.md) as first-layer help; updated navigation pointers throughout.
 - 2026-02-08 (v1.3): Added TL;DR non-negotiables, AI working guardrails, dependency/import contract, build-break protocol, architecture snapshot, tiered observability guidance, FSM concrete example, and revision history section.
 - 2026-02-08 (v1.2): Converted to checklist-driven architecture format; added violations policy routing to `CHANGELOG.md`.
