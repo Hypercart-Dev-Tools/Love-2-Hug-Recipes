@@ -1,8 +1,8 @@
 # AGENTS.md - Checklist-Driven Architecture Guide (Lovable TS/JS/React/Vite/Supabase)
-**Version:** 1.2  
+**Version:** 1.3  
 **Last Updated:** 2026-02-08  
 **Last Audited:** _not yet audited_  
-**Purpose:** Execution checklist for three phases: pre-build, post-first-build, and continuous audit/fix/iterate. This script makes your Lovable code hugable for users.  
+**Purpose:** Execution checklist for three phases: pre-build, post-first-build, and continuous audit/fix/iterate.  
 
 ---
 
@@ -17,6 +17,13 @@
 **License Terms:** https://creativecommons.org/licenses/by/4.0/legalcode
 
 ---
+
+## TL;DR) Read This First (Non-Negotiables)
+- Use `UnifiedLayout` + `UnifiedSidebar` for all pages; do not reintroduce deprecated layout patterns.
+- Use `useAuthStore()` as auth source of truth; no hardcoded user/org IDs.
+- Use `useCmsConfig` + `src/services/cms-config.ts` for CMS; no direct page-level Supabase calls.
+- Implement RLS (including tenant isolation rules) before shipping user-facing features.
+- Log intentional architectural violations in `CHANGELOG.md` with `#lessonslearned`.
 
 ## 0) How to Use This Doc
 - Treat each section as a pass/fail checklist.
@@ -47,6 +54,35 @@
 | 12 | Key Paths | File structure matches contracted paths | [ ] | [ ] | [ ] |
 
 **Column key:** Build = 1st build pass | QA = post-build code review | Human = manual testing
+
+## 0.2) AI Agent Working Guardrails
+- Make one change cluster at a time, verify it, then proceed.
+- Edit surgically; do not delete or rewrite files wholesale unless explicitly requested.
+- Check existing code before creating new files, hooks, or services.
+- If a pattern is unclear, ask: "Which AGENTS.md pattern applies here?"
+- Prefer smallest working diff that preserves current contracts.
+
+## 0.3) Dependency and Import Contract
+- Before creating a new utility/helper, search existing implementations in `src/services/`, `src/lib/`, and `src/utils/`.
+- Keep dependency direction one-way: pages/components -> hooks/services -> integrations.
+- Avoid circular imports and cross-feature back-references.
+- Reuse public module exports before adding parallel helpers.
+- Keep one canonical helper per concern to prevent drift.
+
+## 0.4) Build Break Recovery Protocol
+- Capture the failing command and first actionable error.
+- Isolate the latest change that introduced failure.
+- Fix the smallest root cause first (types/imports/contracts before refactors).
+- Re-run the failing command, then rerun the full verification set.
+- If unresolved, revert only your latest change chunk and retry with a narrower diff.
+
+## 0.5) Current Architecture Snapshot (Update Per Release)
+- Layout/navigation: unified layout system via `src/components/layouts/` (`UnifiedLayout`, `UnifiedSidebar`).
+- CMS: `app_config` keys `tos_html` and `footer_html`, accessed via `useCmsConfig` + `src/services/cms-config.ts`.
+- State: auth in `src/stores/auth-store.ts`, events in `src/stores/events-store.ts`.
+- Data security: RLS on `app_config` and tenant-scoped tables; tenant isolation enforced by policy.
+- Observability baseline: structured async boundary logging + normalized `AppError` contract.
+- Project snapshot fields to maintain each release: active routes, key tables, edge functions, and open architecture decisions.
 
 ## 1) Pre-Build Checklist (Before First Feature)
 - Define domain boundaries: auth, monitoring/events, admin CMS, shared UI, **tenant isolation**.
@@ -115,12 +151,35 @@ Switch trigger checklist:
 - Impossible states can be represented accidentally.
 - Transition rules depend on role, async outcome, or retries/timeouts.
 
-## 7) Observability + Error Contract Checklist (New Required Item)
-- Every async boundary (Supabase call, auth transition, edge function call) emits `start/success/failure` telemetry.
-- Telemetry includes: `feature`, `requestId`, `durationMs`, and `errorCode` on failures.
+Concrete example (boolean drift -> FSM-style union):
+```ts
+// Before (easy to create impossible states)
+const [isLoading, setIsLoading] = useState(false);
+const [isSuccess, setIsSuccess] = useState(false);
+const [hasError, setHasError] = useState(false);
+
+// After (single source of truth for mode)
+type SaveState =
+  | { status: 'idle' }
+  | { status: 'saving' }
+  | { status: 'success' }
+  | { status: 'error'; error: AppError };
+```
+
+## 7) Observability + Error Contract Checklist (Tiered)
+
+Baseline tier (required for Lovable-hosted and self-hosted):
+- Every async boundary (Supabase call, auth transition, edge function call) emits `start/success/failure` logs.
+- Logs include: `feature`, `requestId`, `durationMs`, and `errorCode` on failures.
 - A shared app error shape is enforced across UI/store/server boundaries.
 - Raw errors are normalized at boundaries before reaching UI components.
 - User-facing error handling maps to contract categories (`validation`, `auth`, `permission`, `not_found`, `conflict`, `network`, `db`, `unknown`).
+
+Advanced tier (required when self-hosting or using dedicated telemetry tooling):
+- Forward boundary events to a centralized sink (log aggregation/APM).
+- Propagate correlation IDs across frontend, edge functions, and Supabase operations.
+- Alert on error-rate and latency thresholds by feature/domain.
+- Track release-over-release trend lines for error categories and latency.
 
 Recommended contract:
 ```ts
@@ -147,7 +206,7 @@ type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
   - Cross-tenant queries are blocked by RLS policies
   - Admin access scoped correctly (global config vs. tenant data)
 - Resilience checks pass: loading/error/empty states exist for each remote surface.
-- `Observability + Error Contract Checklist` (Section 7) is fully passed.
+- `Observability + Error Contract Checklist` (Section 7) baseline tier is passed; advanced tier is passed when self-hosting/telemetry tooling exists.
 - `CHANGELOG.md` is updated with version bump and architecture deltas.
 - Metrics captured: RLS policy coverage %, avg page load time, error rate by category.
 
@@ -212,10 +271,14 @@ type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
 Do not log rule violations in this file. Log each violation and lesson in `CHANGELOG.md`.
 
 **Instructions:**
-- Add a changelog entry whenever a rule from Sections 1-12 is intentionally broken.
+- Add a changelog entry whenever a rule from Sections 0-12 is intentionally broken.
 - Include `#lessonslearned` in each entry.
 - Include: date, violated section, business reason, technical outcome, and fix/next action.
 - Review `#lessonslearned` entries quarterly and convert repeated patterns into checklist updates.
 
 **Entry template (in `CHANGELOG.md`):**
 `- YYYY-MM-DD: [Section X] reason -> outcome -> next action #lessonslearned`
+
+## 14) Revision History (This Document)
+- 2026-02-08 (v1.3): Added TL;DR non-negotiables, AI working guardrails, dependency/import contract, build-break protocol, architecture snapshot, tiered observability guidance, FSM concrete example, and revision history section.
+- 2026-02-08 (v1.2): Converted to checklist-driven architecture format; added violations policy routing to `CHANGELOG.md`.
