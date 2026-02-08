@@ -1,4 +1,14 @@
-**https://medium.com/@hlfdev/kiss-dry-solid-yagni-a-simple-guide-to-some-principles-of-software-engineering-and-clean-code-05e60233c79f** 
+# References
+
+The resources below informed the design principles codified in [AGENTS.md](./AGENTS.md). Each article covers one or more of the foundational concepts — SOLID, DRY, KISS, YAGNI — that the checklist-driven architecture translates into concrete, enforceable rules for a Lovable/React/Supabase stack.
+
+These are not required reading to use the system. They exist for developers who want to understand *why* the AGENTS.md rules exist, trace a specific guideline back to its source principle, or go deeper on a concept when onboarding new contributors.
+
+If you add a new architectural rule to AGENTS.md that draws on an external source, add the reference here with a short summary of what it covers and how it connects to the project.
+
+---
+
+**https://medium.com/@hlfdev/kiss-dry-solid-yagni-a-simple-guide-to-some-principles-of-software-engineering-and-clean-code-05e60233c79f**
 
 This Medium article by HlfDev offers a beginner-friendly overview of key software engineering principles including KISS (Keep It Simple, Stupid), DRY (Don't Repeat Yourself), YAGNI (You Aren't Gonna Need It), and SOLID.  It uses straightforward explanations and code examples, such as contrasting repeated tax calculation functions with a single unified one to illustrate DRY benefits.  The piece also briefly covers SOLID's five tenets and the "Tell, Don't Ask" principle, emphasizing adaptability over rigid rules for sustainable code. 
 
