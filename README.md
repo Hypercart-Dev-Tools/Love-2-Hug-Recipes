@@ -188,6 +188,24 @@ If sandbox setup fails, check the **Lovable Back-and-Forth Scenarios** table in 
 
 See **[OFF-ROAD/SUPABASE-TEMP-DEV.md](./OFF-ROAD/SUPABASE-TEMP-DEV.md)** for complete API reference, curl examples, troubleshooting guide, and graduation workflow.
 
+---
+
+## SEO for React SPAs (Making Your Home Page Visible to Search Engines)
+
+**Problem:** Lovable sites ship as React SPAs. Search engines and AI crawlers see an empty `<div id="root"></div>` — your home page is invisible to Google, Bing, ChatGPT, and Claude.
+
+**Solution:** Static HTML injection or prerendering for the home page only.
+
+See **[OFF-ROAD/STATIC-HOME-PAGE.md](./OFF-ROAD/STATIC-HOME-PAGE.md)** for a phased guide:
+- **Spike:** Inject static HTML at build time (15 minutes, zero infra)
+- **Phase 1:** Prerender with Puppeteer postbuild script (hours, CLI required)
+- **Phase 2:** Cloudflare Worker as prerender proxy (half-day, free tier)
+- **Phase 3:** Dedicated static home page outside React (1-2 days, fully decoupled)
+
+Stop as soon as one phase works reliably for your site.
+
+---
+
 ## License
 
 **Code:** This project's code is available under standard open-source terms.
