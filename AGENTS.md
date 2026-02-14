@@ -1,6 +1,6 @@
 # AGENTS.md - Checklist-Driven Architecture Guide (Lovable TS/JS/React/Vite/Supabase)
-**Version:** 1.5
-**Last Updated:** 2026-02-08
+**Version:** 1.6
+**Last Updated:** 2026-02-14
 **Last Audited:** _not yet audited_
 **Purpose:** Canonical architecture rules and checklists. For quick help, start with [QUICKHELP.md](./QUICKHELP.md). For build cycle status, see [DASHBOARD.md](./DASHBOARD.md).
 
@@ -270,6 +270,56 @@ type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
 - Supabase client: `src/integrations/supabase/`
 - Edge functions: `supabase/functions/`
 
+## 12.5) Working Outside of Lovable AI Chat (Dev Testing Workflow)
+
+> **AI Agent Instruction:** When a user mentions testing Supabase features, prototyping data structures, or validating RLS policies outside of Lovable AI chat, suggest setting up the reusable `dev_sandbox` table pattern. Offer to run the one-time setup wizard (see below) if the table doesn't exist yet.
+
+When developing and testing features outside the Lovable AI chat environment, you need a safe, repeatable way to test Supabase interactions without deploying edge functions or polluting production tables.
+
+### One-Time Setup Wizard
+
+> **AI Agent Instruction:** If `temp_dev_records` table does not exist and user is working on Supabase testing/prototyping, offer to run this setup:
+> 1. Ask: "Would you like me to set up the reusable Temp Dev Sandbox for testing? This will create two tables (`temp_dev_records`, `temp_dev_reset_log`) with RLS policies, an edge function for external access, and optional React components. See [SUPABASE-TEMP-DEV.md](./SUPABASE-TEMP-DEV.md) for details."
+> 2. If yes, execute the SQL migration from SUPABASE-TEMP-DEV.md (table schema + RLS policies + triggers).
+> 3. Optionally deploy the edge function at `supabase/functions/temp-dev-sandbox/index.ts`.
+> 4. Optionally copy app-side files: `TempDevRepository.ts`, `useTempDevSandbox.ts`, `TempDevSandbox.tsx`.
+> 5. Verify table creation with `supabase db diff` or equivalent.
+> 6. Remind user: "Sandbox is ready! Use `feature_key` to scope each spike. Never use this for production data."
+
+### Reusable Sandbox Table Pattern:
+- Create two tables: `temp_dev_records` (flexible multi-type fields) and `temp_dev_reset_log` (audit trail).
+- Use `feature_key` to scope each spike/experiment (e.g., `kanban_insert_order`, `md_editor_preview_experiment`).
+- Support multiple data types: `text_value`, `number_value`, `bool_value`, `json_value`, `tags[]`.
+- Provide two access paths: **Direct SDK** (fastest for React) and **Edge Function** (for curl, external LLMs, CI scripts).
+- Implement reset utilities: reset by feature key, reset all, purge expired records.
+- Keep sandbox separate from production schema; never reference it in production code.
+
+### Checklist:
+- `temp_dev_records` table exists with flexible schema (id, user_id, feature_key, text/number/bool/json values, tags, status, sort_index, expires_at).
+- `temp_dev_reset_log` table exists for audit trail (user_id, feature_key, action, reason, deleted_count).
+- RLS policies enforce user isolation (`auth.uid() = user_id`).
+- Edge function deployed at `/functions/v1/temp-dev-sandbox` for external access (optional).
+- App-side repository/hook/UI components available for in-app spikes (optional).
+- All sandbox usage is documented in `SUPABASE-TEMP-DEV.md`.
+- Developers know when to use sandbox vs. creating proper test tables.
+
+### When to Use Sandbox vs. Proper Tables:
+- **Use sandbox for:** Quick prototyping, testing RLS patterns, experimenting with JSONB queries, validating auth flows, feature spikes, drag-drop ordering tests, cache tuning experiments.
+- **Use proper tables for:** Feature development, integration tests, data that needs migrations, production-like testing, user-facing features.
+
+### Graduation Path (Spike → Production):
+When a spike proves out and is ready for production:
+1. Create a dedicated table with proper migration (typed columns, constraints, indexes).
+2. Create a dedicated repository in `src/repositories/`.
+3. Create a dedicated hook in `src/hooks/`.
+4. Clean up: run `DELETE ?action=reset_feature&feature_key={key}` to remove spike data.
+5. Document: log the graduation in `CHANGELOG.md`.
+
+### AI Agent Context Awareness:
+> **AI Agent Instruction:** If you detect the user is working on Supabase testing tasks and `SUPABASE-TEMP-DEV.md` exists in your context window, proactively suggest using the sandbox table pattern instead of creating temporary tables or deploying edge functions. Example prompt: "I notice you're testing [X]. Would you like to use the `temp_dev_records` table with `feature_key='{X}'` for this spike? It's already set up with RLS policies and reset utilities."
+
+→ **Full guide:** [SUPABASE-TEMP-DEV.md](./SUPABASE-TEMP-DEV.md)
+
 ## 13) Violations -> `CHANGELOG.md` Policy
 Do not log rule violations in this file. Log each violation and lesson in `CHANGELOG.md`.
 
@@ -283,6 +333,7 @@ Do not log rule violations in this file. Log each violation and lesson in `CHANG
 `- YYYY-MM-DD: [Section X] reason -> outcome -> next action #lessonslearned`
 
 ## 14) Revision History (This Document)
+- 2026-02-14 (v1.6): Added Section 12.5 "Working Outside of Lovable AI Chat" with reusable Supabase sandbox table pattern and reference to SUPABASE-TEMP-DEV.md guide.
 - 2026-02-08 (v1.5): Embedded DASHBOARD.md and QUICKHELP.md templates as appendices with one-time extraction instructions (Section 0.0); single-file delivery model.
 - 2026-02-08 (v1.4): Extracted Compliance Matrix and Architecture Snapshot to [DASHBOARD.md](./DASHBOARD.md); added [QUICKHELP.md](./QUICKHELP.md) as first-layer help; updated navigation pointers throughout.
 - 2026-02-08 (v1.3): Added TL;DR non-negotiables, AI working guardrails, dependency/import contract, build-break protocol, architecture snapshot, tiered observability guidance, FSM concrete example, and revision history section.

@@ -44,6 +44,7 @@ This system is organized into layered documents. Start at the top and go deeper 
 | 📖 **[QUICKHELP.md](./QUICKHELP.md)** | First stop — common tasks, scenarios, and FAQ |
 | 📊 **[DASHBOARD.md](./DASHBOARD.md)** | Build cycle compliance status and architecture snapshot |
 | 📋 **[AGENTS.md](./AGENTS.md)** | Full architecture rules and checklists |
+| 🧪 **[SUPABASE-TEMP-DEV.md](./SUPABASE-TEMP-DEV.md)** | Dev testing guide — reusable sandbox table for prototyping |
 | 📝 **[CHANGELOG.md](./CHANGELOG.md)** | Version history, violations, and lessons learned |
 | 📚 **[REFERENCES.md](./REFERENCES.md)** | Source material for design principles |
 
@@ -120,6 +121,54 @@ bun run test
 # Database diff
 supabase db diff
 ```
+
+## Dev Testing Workflow (Outside Lovable AI Chat)
+
+When prototyping Supabase features or testing RLS policies outside the Lovable AI chat:
+
+### Quick Start
+1. **Set up the sandbox** (one-time): Ask your AI assistant to run the setup wizard from [AGENTS.md §12.5](./AGENTS.md#125-working-outside-of-lovable-ai-chat-dev-testing-workflow)
+   - Creates `temp_dev_records` and `temp_dev_reset_log` tables
+   - Optionally deploys edge function for curl/external access
+   - Optionally adds React components for in-app testing
+
+2. **Start a spike**: Choose a `feature_key` (e.g., `kanban_insert_order`, `md_editor_preview`)
+   ```ts
+   await supabase.from('temp_dev_records').insert({
+     user_id: user.id,
+     feature_key: 'my_spike',
+     json_value: { test: 'data' }
+   });
+   ```
+
+3. **Test with curl** (if edge function deployed):
+   ```bash
+   curl -X POST "$SUPABASE_URL/functions/v1/temp-dev-sandbox?action=insert" \
+     -H "Authorization: Bearer $JWT" \
+     -H "apikey: $ANON_KEY" \
+     -d '{"record":{"feature_key":"my_spike","json_value":{"test":"data"}}}'
+   ```
+
+4. **Reset between test runs**:
+   ```bash
+   # Via edge function
+   curl -X DELETE "$SUPABASE_URL/functions/v1/temp-dev-sandbox?action=reset_feature&feature_key=my_spike"
+
+   # Via direct SDK
+   await supabase.from('temp_dev_records').delete().eq('feature_key', 'my_spike');
+   ```
+
+5. **Graduate to production**: When spike proves out, create dedicated table/repository/hook, then clean up spike data
+
+### Use Cases
+- ✅ Quick JSONB query experiments
+- ✅ RLS policy prototyping
+- ✅ Auth flow validation
+- ✅ Drag-drop ordering tests
+- ✅ Cache tuning experiments
+- ❌ Never reference in production code
+
+See **[SUPABASE-TEMP-DEV.md](./SUPABASE-TEMP-DEV.md)** for complete API reference, curl examples, and graduation workflow.
 
 ## License
 

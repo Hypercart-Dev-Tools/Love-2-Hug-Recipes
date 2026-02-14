@@ -1,6 +1,6 @@
 # QUICKHELP.md - First-Layer Help & FAQ
-**Version:** 1.0  
-**Last Updated:** 2026-02-08  
+**Version:** 1.1
+**Last Updated:** 2026-02-14
 
 Start here before diving into the full architecture guide. Most common tasks and questions are answered below with links to detailed rules when needed.
 
@@ -50,8 +50,13 @@ Intentional rule breaks are logged in the changelog with context and follow-up a
 → [AGENTS.md §13 — Violations Policy](./AGENTS.md#13-violations---changelogmd-policy)
 
 ### Understand the current architecture
-The architecture snapshot captures the current state of key decisions and is updated each release.  
+The architecture snapshot captures the current state of key decisions and is updated each release.
 → [DASHBOARD.md — Architecture Snapshot](./DASHBOARD.md#current-architecture-snapshot)
+
+### Test Supabase features outside Lovable AI chat
+Use the reusable sandbox table for prototyping queries, RLS policies, and data structures without deploying edge functions.
+→ [AGENTS.md §12.5 — Dev Testing Workflow](./AGENTS.md#125-working-outside-of-lovable-ai-chat-dev-testing-workflow)
+→ [SUPABASE-TEMP-DEV.md — Complete Guide](./SUPABASE-TEMP-DEV.md)
 
 ---
 
@@ -62,6 +67,7 @@ The architecture snapshot captures the current state of key decisions and is upd
 | **[QUICKHELP.md](./QUICKHELP.md)** (this file) | First-layer help, common tasks, FAQ | First stop for any question |
 | **[DASHBOARD.md](./DASHBOARD.md)** | Build cycle status and architecture snapshot | During and after each build cycle |
 | **[AGENTS.md](./AGENTS.md)** | Full architecture rules and checklists | When you need detailed implementation rules |
+| **[SUPABASE-TEMP-DEV.md](./SUPABASE-TEMP-DEV.md)** | Dev testing guide with sandbox table | When prototyping Supabase features |
 | **[CHANGELOG.md](./CHANGELOG.md)** | Version history, violations, lessons learned | After changes or when reviewing history |
 | **[REFERENCES.md](./REFERENCES.md)** | Source material for design principles | When you want to understand *why* a rule exists |
 
@@ -91,10 +97,14 @@ The layout system has designated extension points. Don't add new layout patterns
 → [AGENTS.md §11 — Theme/Branding](./AGENTS.md#11-themebranding-future-ready-checklist)
 
 ### "When do I reset the compliance dashboard?"
-At the start of every new build cycle. Reset all checkboxes and update the header dates.  
+At the start of every new build cycle. Reset all checkboxes and update the header dates.
 → [DASHBOARD.md — Orchestration Notes](./DASHBOARD.md#orchestration-notes-for-agents)
 
 ### "Where do I log bugs or architecture exceptions?"
-In the changelog, using the standard entry format with `#lessonslearned` tag.  
+In the changelog, using the standard entry format with `#lessonslearned` tag.
 → [AGENTS.md §13](./AGENTS.md#13-violations---changelogmd-policy) | [CHANGELOG.md](./CHANGELOG.md)
+
+### "How do I test Supabase features without deploying edge functions?"
+Use the `dev_sandbox` table pattern. Ask your AI assistant to run the one-time setup wizard, then use the sandbox for prototyping queries, RLS policies, and data structures. Reset between test runs with `supabase.rpc('reset_my_sandbox')`.
+→ [SUPABASE-TEMP-DEV.md](./SUPABASE-TEMP-DEV.md)
 
