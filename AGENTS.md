@@ -1,6 +1,6 @@
 # AGENTS.md - Checklist-Driven Architecture Guide (Lovable TS/JS/React/Vite/Supabase)
-**Version:** 1.6
-**Last Updated:** 2026-02-14
+**Version:** 1.7
+**Last Updated:** 2026-02-16
 **Last Audited:** _not yet audited_
 **Purpose:** Canonical architecture rules and checklists. For quick help, start with [QUICKHELP.md](./QUICKHELP.md). For build cycle status, see [DASHBOARD.md](./DASHBOARD.md).
 
@@ -354,6 +354,58 @@ This keeps AGENTS.md focused on current architecture rules and reduces context o
 
 ---
 
+## 15) Breaking Change Management Checklist
+
+**Definition:** A breaking change is any modification that causes existing consumers (UI components, services, hooks, RLS policies, edge functions, or external integrations) to fail without code changes on their side.
+
+### Severity Tiers
+
+| Tier | Scope | Examples | Handling |
+|------|-------|----------|----------|
+| **Critical** | Schema-level | Dropped/renamed columns, changed column types, removed tables | Requires migration script, rollback plan, and team sign-off before merge |
+| **High** | API/contract-level | Changed service interface signatures, modified hook return shapes, altered edge function request/response contracts | Requires deprecation period or versioned endpoint |
+| **Moderate** | UI contract-level | Renamed `app_config` keys, changed component prop contracts, altered store action signatures | Requires backward-compatible shim for one release cycle |
+
+### Identification Checklist
+- Evaluate all changes for breaking impacts before opening a PR, especially when:
+  - Modifying database tables, columns, types, or constraints.
+  - Changing service interfaces, hook return types, or store action signatures.
+  - Updating shared libraries, API contracts, or edge function request/response shapes.
+  - Fixing bugs in ways that alter established behavior consumers may depend on.
+  - Touching RLS policies that other queries or services rely on (cross-ref Sections 10/10.5).
+
+### Pre-Merge Gate
+- Run `bun run typecheck && bun run lint && bun run test` against the existing test suite before merging any schema/API change.
+- Verify RLS policies still function correctly after any schema change (cross-ref Sections 10/10.5).
+- Confirm no existing consumers break by searching for all call sites of the changed contract.
+
+### Migration & Rollback
+- Document a rollback plan: how to revert the change if it fails in production.
+- For schema changes: provide a forward migration and a reverse migration script.
+- For renamed keys (e.g., `app_config`): keep the old key readable for one release cycle and add a deprecation log entry before removing it.
+- For changed service interfaces: support both old and new signatures for one release cycle when feasible.
+
+### Communication & Logging
+- Add a `## Breaking Changes` subsection to the CHANGELOG.md release entry.
+- Include: affected tier, what changed, migration steps for consumers, and rollback instructions.
+- Communicate the impact and migration plan to the team before merging.
+- Avoid breaking changes unless there is a clear, documented business need.
+
+---
+
+## 16) Technical Spike & Proof of Concept (POC) Checklist
+- **Define Purpose:** Before starting a spike, define a clear, timeboxed objective. Spikes should be used to:
+  - Validate the feasibility of a new feature or architectural choice.
+  - Identify risks and unknowns early in the planning phase.
+  - Minimize surprises during full implementation.
+- **Follow Guidelines:**
+  - Define clear, measurable objectives for the spike.
+  - Timebox the effort to avoid scope creep and analysis paralysis.
+  - Use the `temp_dev_records` sandbox for safe, isolated testing (see Section 12.5).
+  - Document all findings and decisions in the `OFF-ROAD/` directory or relevant project documentation.
+
+---
+
 ## Appendix A: DASHBOARD.md Template
 
 > **AI Agent Instruction:** If `DASHBOARD.md` does not exist in the project root, create it with the content below (everything between the `<!-- BEGIN DASHBOARD TEMPLATE -->` and `<!-- END DASHBOARD TEMPLATE -->` markers). Do not include the marker comments in the extracted file.
@@ -544,37 +596,3 @@ In the changelog, using the standard entry format with `#lessonslearned` tag.
 
 <!-- END QUICKHELP TEMPLATE -->
 
-## 15) Breaking Changes Awareness and Minimization
-
-### Proactive Identification of Breaking Changes
-- Always evaluate changes for potential breaking impacts, especially in the following scenarios:
-  - **New Feature Addition:** Adding new functionality that modifies existing APIs, database schemas, or contracts.
-  - **Bug Fixes:** Changes that alter expected behavior, even if unintended.
-  - **PR Reviews:** During code reviews, flag any changes that could disrupt existing functionality.
-- Examples of breaking changes:
-  - Modifications to existing database tables/schemas (e.g., renaming columns, changing data types).
-  - Changes to API contracts (e.g., removing fields, altering response structures).
-  - Updates to shared libraries or dependencies that affect downstream consumers.
-
-### Minimization Strategy
-- Avoid breaking changes unless absolutely necessary. If unavoidable:
-  - Clearly document the change and its impact.
-  - Communicate with stakeholders and ensure alignment.
-  - Provide migration paths or backward compatibility where possible.
-- Always log breaking changes in `CHANGELOG.md` with a clear description and mitigation steps.
-
----
-
-## 16) Technical Spikes and Proof of Concept (POC)
-
-### Purpose
-- Conduct technical spikes or POC tests during the project planning phase to:
-  - Validate feasibility of new features or architectural decisions.
-  - Identify potential risks and unknowns early.
-  - Minimize surprises during implementation.
-
-### Guidelines
-- Define clear objectives for the spike (e.g., test a new library, validate a database schema).
-- Timebox the effort to avoid scope creep.
-- Document findings and decisions in `OFF-ROAD/` or relevant project documentation.
-- Use the `temp_dev_records` table pattern for safe, repeatable testing (see [OFF-ROAD/SUPABASE-TEMP-DB.md](./OFF-ROAD/SUPABASE-TEMP-DB.md)).
