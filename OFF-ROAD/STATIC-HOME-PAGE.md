@@ -1484,3 +1484,13 @@ The JS bundle is not needed for an SEO test page (crawlers don't execute JavaScr
 **Problem:** An abandoned `src/main-ssg.tsx` file (SSG entry point) and `ssgOptions` in `vite.config.ts` caused build errors. The project uses standard SPA architecture, not SSG.
 
 **Fix:** Deleted `src/main-ssg.tsx` and removed `ssgOptions` from `vite.config.ts`. If you're following this guide, don't try to add SSG to a Lovable project — it's not compatible with Lovable's build pipeline. Use the capture tool or Cloudflare Worker approach instead.
+
+### 2026-02-16 — Documentation format consistency is critical for readability
+
+**Problem:** The `AGENTS.md` file is explicitly a "Checklist-Driven Architecture Guide". New sections were added (`## 15) Breaking Changes...`, `## 16) Technical Spikes...`) that used prose and sub-headings (`### Proactive Identification...`) instead of the flat, scannable checklist format used in the rest of the document. This broke the document's flow and made the new rules harder to parse quickly.
+
+**Root cause:** When adding new content to existing documentation, it's easy to focus only on the content itself and overlook the established format and structure. This leads to stylistic drift over time.
+
+**Fix applied:** The new sections were refactored to match the established checklist format. The `###` sub-headings were removed, and the points were rewritten as a flat list of direct, actionable rules under the main `##` heading.
+
+**Takeaway:** When extending technical documentation, strictly adhere to the existing formatting conventions (e.g., checklists, callouts, tables). Consistency is a feature. It reduces cognitive load for the reader and makes the document easier to use as a reference. A quick review of surrounding sections before adding new ones can prevent this.
