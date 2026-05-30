@@ -589,12 +589,12 @@ This keeps AGENTS.md focused on current architecture rules and reduces context o
 |------|-------|----------|----------|
 | **Critical** | Schema-level | Dropped/renamed columns, changed column types, removed tables | Requires migration script, rollback plan, and team sign-off before merge |
 | **High** | API/contract-level | Changed service interface signatures, modified hook return shapes, altered edge function request/response contracts | Requires deprecation period or versioned endpoint |
-| **Moderate** | UI contract-level | Renamed `app_config` keys, changed component prop contracts, altered store action signatures | Requires backward-compatible shim for one release cycle |
+| **Moderate** | UI contract-level | Renamed `app_config` keys, changed component prop contracts, altered state hook or store action signatures | Requires backward-compatible shim for one release cycle |
 
 ### Identification Checklist
 - Evaluate all changes for breaking impacts before opening a PR, especially when:
   - Modifying database tables, columns, types, or constraints.
-  - Changing service interfaces, hook return types, or store action signatures.
+  - Changing service interfaces, hook return types, or state hook/store action signatures.
   - Updating shared libraries, API contracts, or edge function request/response shapes.
   - Fixing bugs in ways that alter established behavior consumers may depend on.
   - Touching RLS policies that other queries or services rely on (cross-ref Sections 10/10.5).
@@ -659,17 +659,18 @@ This is the **living status tracker** for each build cycle. Agents and humans ch
 
 | # | Section | Verify | Build | QA | Human |
 |---|---------|--------|:-----:|:--:|:-----:|
+| 0.8 | Repo Anchors | "Applied to this repo" sub-section exists, is accurate, and matches current codebase | [ ] | [ ] | [ ] |
 | 1 | Pre-Build | Domains, folders, tenant model, typed contracts defined | [ ] | [ ] | [ ] |
-| 2 | Build Contract | Layout component on all pages, single `max-width` definition, no deprecated patterns | [ ] | [ ] | [ ] |
-| 3 | CMS Content | All CMS via service layer + hook, no direct Supabase | [ ] | [ ] | [ ] |
-| 4 | State Mgmt | Auth via canonical hook, no duplicate state | [ ] | [ ] | [ ] |
+| 2 | Build Contract | Layout component on all pages, single `max-width` definition, server boundary clean, no deprecated patterns | [ ] | [ ] | [ ] |
+| 3 | CMS Content | All CMS via service layer + canonical hook, no direct Supabase client in components | [ ] | [ ] | [ ] |
+| 4 | State Mgmt | Auth via canonical hook, no hardcoded user IDs, no duplicate state | [ ] | [ ] | [ ] |
 | 6 | FSM | Correct pattern per complexity tier, no impossible states | [ ] | [ ] | [ ] |
 | 7 | Observability | Async boundaries emit telemetry, errors normalize to `AppError` | [ ] | [ ] | [ ] |
-| 8 | Post Build | `typecheck`/`lint`/`test` green, journeys pass, RLS + tenant isolation verified | [ ] | [ ] | [ ] |
+| 8 | Post Build | `typecheck`/`lint`/`test` green, critical journeys pass, RLS + tenant isolation verified | [ ] | [ ] | [ ] |
 | 9 | Continuous Audit | Runtime signals reviewed, fixes shipped, changelog updated | [ ] | [ ] | [ ] |
-| 10 | RLS | User-data tables have RLS enabled, admin-only writes verified, policies current | [ ] | [ ] | [ ] |
+| 10 | RLS | User-data tables have RLS, admin gates use `has_role()`, no `auth.users` FK, policies current | [ ] | [ ] | [ ] |
 | 10.5 | Multi-Tenant | Tenant isolation enforced, cross-tenant access blocked, 100% RLS coverage | [ ] | [ ] | [ ] |
-| 11 | Theme | Extension points untouched, no premature branding | [ ] | [ ] | [ ] |
+| 11 | Theme | Extension points untouched, site name sourced from token, no hardcoded brand | [ ] | [ ] | [ ] |
 | 12 | Key Paths | File structure matches contracted paths | [ ] | [ ] | [ ] |
 
 **Column key:** Build = 1st build pass | QA = post-build code review | Human = manual testing
@@ -680,11 +681,11 @@ This is the **living status tracker** for each build cycle. Agents and humans ch
 
 > Update this section after each release. It captures the current state of key architectural decisions.
 
-- **Layout/navigation:** [Describe layout system and nav style.]
-- **CMS:** [Describe CMS approach or "not applicable".]
-- **State:** [Describe auth hook/context and any shared state stores.]
-- **Data security:** [Describe RLS coverage and tenant isolation approach.]
-- **Observability baseline:** [Describe logging and error contract status.]
+- **Layout/navigation:** [Layout component and nav style — e.g. top-nav, sidebar.]
+- **CMS:** [CMS approach and config keys in use, or "not applicable".]
+- **State:** [Auth hook/context path and any shared state stores.]
+- **Data security:** RLS on [list tables]; tenant isolation enforced by policy.
+- **Observability baseline:** Structured async boundary logging + normalized `AppError` contract.
 - **Snapshot fields to maintain each release:** Active routes, key tables, edge functions, and open architecture decisions.
 
 ---
