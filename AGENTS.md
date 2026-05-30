@@ -1,15 +1,15 @@
-# AGENTS.md - Checklist-Driven Architecture Guide (Lovable TS/JS/React/Vite/Supabase)
-**Version:** 1.8
-**Last Updated:** 2026-02-20
-**Last Audited:** _not yet audited_
-**Purpose:** Canonical architecture rules and checklists. For quick help, start with [QUICKHELP.md](./QUICKHELP.md). For build cycle status, see [DASHBOARD.md](./DASHBOARD.md).
+# AGENTS.md - [Project Name] Architecture Guide (TanStack Start / React / Vite / Lovable Cloud)
+**Version:** 1.0
+**Last Updated:** [Date]
+**Last Audited:** [Not yet audited]
+**Purpose:** Canonical architecture rules for **[Project Name]** (TanStack Start + Lovable Cloud). For quick help see [QUICKHELP.md](./QUICKHELP.md). For build cycle status see [DASHBOARD.md](./DASHBOARD.md). For history see [CHANGELOG.md](./CHANGELOG.md).
 
 ---
 
 **License:** CC BY 4.0 (Creative Commons Attribution 4.0 International)
-**Copyright:** © 2026 Hypercart DBA Neochrome, Inc.
+**Copyright:** © [Year] [Your Name / Organization]
 **Attribution Required:** When sharing or adapting this work, you must:
-- Credit "Hypercart DBA Neochrome, Inc." as the original author
+- Credit "Hypercart DBA Neochrome, Inc." as the original author of the template
 - Provide a link to https://creativecommons.org/licenses/by/4.0/
 - Indicate if changes were made
 - Not remove this attribution notice
@@ -18,13 +18,74 @@
 
 ---
 
+## NON NEGOTIABLE GUIDING PRINCIPLES
+
+Prefer the simplest design that meets the bar — *simple* meaning easy to
+understand and change, not least code or fewest files. Security, resilience,
+and adequate performance are entry conditions, not things simplicity or
+flexibility may override; among designs that clear them, the simplest wins.
+When design principles conflict, clarity wins.
+
+Two disciplines keep this balanced — they operate on different axes, not
+against each other:
+- **YAGNI governs features and speculative abstraction.** Build for today's
+  known needs, not hypothetical ones. It does *not* govern decomposition: keep
+  units small, well-named, and single-responsibility, and split for clarity as
+  soon as it helps understanding — even with one consumer today.
+- **Reversibility governs foundations.** Build little — but build it so you can
+  change direction. Don't get locked in.
+
+- **SOLID, applied lightly.** Focused responsibilities, intentional
+  dependencies, small interfaces. No interface, layer, or abstraction for a
+  single *production* caller — unless it is also a necessary test seam, in which
+  case the test harness is a real second caller that justifies it.
+- **DRY by judgment.** Deduplicate logic that is truly the same and changes
+  together. Prefer duplication over a premature or wrong abstraction (rule of
+  three before extracting).
+- **Stay reversible, don't pre-build.** Spend foresight on decisions costly to
+  undo — schema, public contracts, storage/wire formats, framework lock-in —
+  and isolate them behind a seam. Distinguish truly one-way doors from merely
+  *sticky* ones (hard but not impossible to change); a sticky door rarely earns
+  a seam. Everything else is a two-way door: build it simple now, change it
+  later. A seam is still attack surface and indirection, so it answers to the
+  security and performance floor like any other code.
+- **Secure by Design.** Validate at trust boundaries, secure defaults, fail
+  closed, defense in depth. Parameterize all queries; never log secrets or PII.
+- **Least Privilege.** Every user, service, and component gets the minimum
+  access it needs — nothing ambient, nothing "just in case."
+- **Prove the floor — don't assume it.**
+  - *Tests from day one:* cover behavior with fast, isolated tests; stand up a
+    test harness whenever the stack allows.
+  - *Observability is part of resilience:* you can't be resilient to failures
+    you can't see. Ship meaningful telemetry, structured logging, and health
+    checks — enough to detect, diagnose, and recover. Instruments obey the same
+    floor: no secrets or PII in logs.
+  - *Performance is budgeted:* pin a quantitative budget on any
+    performance-sensitive path (p99 latency, throughput, query/row bounds) so
+    "adequate" is measured, not assumed. Simplicity operates freely below the bar.
+
+### Applied to this repo ([Project Name])
+
+> **AI Agent Instruction:** Run §0.8 discovery checklist to populate this section before any build work begins.
+
+- **DRY:** [layout primitive and path]; [auth source and path]; [config/CMS pattern]; [one canonical data-access path]. Extract only when the abstraction preserves readability.
+- **Single Responsibility:** [what components handle]; [where I/O lives]; [split rule].
+- **Open/Closed:** [how to extend without rewriting stable flows — new entries, variants, config keys].
+- **Liskov:** [replaceable implementation rule — mocks/adapters must preserve the same contract].
+- **Interface Segregation:** [small interface examples — name the hook/service and what it exposes].
+- **Dependency Inversion:** [what components depend on instead of raw primitives].
+- **State hygiene:** [local vs. shared vs. persisted]; [status union pattern]; [reset rule].
+
+---
+
 ## TL;DR) Read This First (Non-Negotiables)
-- Use `UnifiedLayout` + `UnifiedSidebar` for all pages; do not reintroduce deprecated layout patterns.
-- Define page `max-width` once in `UnifiedLayout.tsx`; never add per-page width overrides.
-- Use `useAuthStore()` as auth source of truth; no hardcoded user/org IDs.
-- Use `useCmsConfig` + `src/services/cms-config.ts` for CMS; no direct page-level Supabase calls.
-- Implement RLS (including tenant isolation rules) before shipping user-facing features.
-- Log intentional architectural violations in `CHANGELOG.md` with `#lessonslearned`.
+- All pages use `[LayoutComponent]` from `[path]`. Width is set via the `width` prop only — no per-page `max-w-*` overrides.
+- Routing is **TanStack Start file-based** under `src/routes/` (NOT `src/pages/`). Never edit `src/routeTree.gen.ts`.
+- Auth source of truth is `[authHook]` from `[path]` ([React Context / Zustand / other]). No hardcoded user IDs.
+- Server-only **implementation** lives under `src/server/*.server.ts` (never imported from client code). The **RPC wrappers** built with `createServerFn` live under `src/server-fns/*.functions.ts` and are the only server entrypoint that routes/components may import. Never import `client.server.ts` from components.
+- All user-data tables have RLS enabled; admin checks use the `has_role()` security-definer function. Never reference `auth.users` via FK — use `profiles`.
+- **Dev login** (`src/server-fns/dev-login.functions.ts`) is origin-gated to `*.lovable.app`, `*.lovable.dev`, `*.lovableproject.com`, and `localhost`. Never expand the allow-list.
+- Log intentional architectural deviations in `CHANGELOG.md` with `#lessonslearned`.
 
 ## 0) How to Use This Doc
 - Treat each section as a pass/fail checklist.
@@ -88,62 +149,231 @@ The Overall Health Grade is a high-level indicator of the project's architectura
 
 The grade is assessed at the end of each audit cycle and serves as a guide for prioritization. A grade of B- or below signals that technical debt remediation should be prioritized over new features.
 
+## 0.7) Code Intelligence (ask-self RAG)
+
+This repo ships a thin integration layer for **ask-self**, a repository-grounded RAG over this codebase and its docs. The index lives at `temp/rag/[project-name]-self-ask.sqlite` (gitignored). The wrappers live in `scripts/`, the harness lives in `ask_self/`, and the external ask-self install is referenced via `ASK_SELF_PATH` (default `/path/to/ask-self`).
+
+### Who this is for
+
+- **Lovable AI** (the agent that edits this repo from the Lovable Cloud authoring surface) runs inside its own retrieval system and **does not** need ask-self. Lovable should ignore this section. Do not add ask-self steps to Lovable's workflow, do not ask Lovable to run the wrappers, and do not block a Lovable change on a fresh ingest.
+- **Local agents** (Claude Code, Cursor, Augment, Copilot Chat, anything driven from a developer's VS Code or terminal) **must** use ask-self. This section is a hard rule for that audience.
+
+### Local-agent rules (non-negotiable)
+
+- **Query first, grep second.** Before grep-spelunking, before walking the file tree, and before asking the user to re-explain anything about this repo, run:
+  - `./scripts/ask-self-query.sh "your question here"`
+  - Use it for: session-start orientation, unfamiliar subsystems, pronoun-heavy questions ("the auth flow", "that helper", "this dialog"), and any cross-file behavior question.
+  - Skip it for: trivial single-file reads, tight edit-test loops you are already inside, and questions about uncommitted state (the index is frozen at the last ingest).
+- **Cite from the answer.** ask-self returns `supporting_evidence` with file labels — quote those paths in your reply to the user instead of restating the answer in your own words.
+- **Refresh when stale.** The index reflects the last ingest, not the current working tree. Refresh when any of these are true:
+  - the timestamp on `temp/rag/[project-name]-self-ask.sqlite` is older than the latest commit on `main`,
+  - a structural change has landed since the last ingest (new route, new server function, new Supabase migration, renamed module, deleted file),
+  - a query returns "context does not support an answer" for a topic you can see in the working tree,
+  - more than ~24 hours of active development have passed without a refresh.
+- **Refresh command:**
+  - `./scripts/ask-self-ingest.sh` — full refresh, `--mode all`, no PR ingestion.
+  - The script auto-prefers `$ASK_SELF_PATH/.venv/bin/python` if present, otherwise falls back to `python3`.
+  - `GOOGLE_API_KEY` must be in the environment (Gemini-backed embeddings + synthesis). If a local agent does not have it, ask the operator to export it from their secrets store before retrying — do not silently fall back to grep.
+- **Do not commit `ARCHITECTURE.md` blindly.** Ingest regenerates it. If the diff is purely a fresh ask-self regeneration, treat it like a build artifact: commit it deliberately, not as a side-effect of unrelated work.
+
+### Override and escape hatches
+
+- `ASK_SELF_PATH=/some/other/checkout ./scripts/ask-self-query.sh "..."` — point at a different ask-self install.
+- `ASK_SELF_PYTHON=/path/to/python ./scripts/ask-self-ingest.sh` — pin a specific Python interpreter.
+- If ask-self is unavailable on a given machine, the wrapper fails loudly with a clear path-not-found message — do not paper over the error, surface it to the operator.
+
+### Strong preferred phrasing for local agents
+
+> Before grep-spelunking or asking the user to re-explain repo context, query ask-self first. If the answer cites stale paths, refresh the index, then re-query. Only fall back to manual exploration when ask-self has no relevant context.
+
+## 0.8) Individual Repo Best Practices
+
+> **AI Agent Instruction:** On first use in a new repo, work through the discovery checklist below to derive the project's concrete architectural anchors. Once you have answers, write an "Applied to this repo ([Project Name])" sub-section directly under the NON NEGOTIABLE GUIDING PRINCIPLES section, using the output format below. Do this before any build work begins. If the sub-section already exists, verify it is still accurate against the current codebase and update any stale entries.
+
+The abstract principles in the NON NEGOTIABLE GUIDING PRINCIPLES section need to be grounded in repo-specific, pass/fail rules before they can be applied reliably. This section is a one-time bootstrapping step for each project — run the checklist, write the answers as a named sub-section, then keep it current as the architecture evolves. A stale "Applied to" section is worse than none.
+
+### Discovery Checklist
+
+Read the codebase (or ask the operator) to answer each question. Each answer becomes one bullet in the output sub-section.
+
+| # | Question | Principle it grounds |
+|---|----------|----------------------|
+| 1 | What is the single layout wrapper component, and where does it live? | DRY (layout) |
+| 2 | What is the auth source of truth — hook, store, or context — and where is it defined? | DRY (auth), Dependency Inversion |
+| 3 | How do components reach the database or backend? Name the canonical path (server functions, API routes, direct SDK, etc.). | Single Responsibility, Dependency Inversion |
+| 4 | What handles cross-route shared state — context, store, or server refetch? | State hygiene |
+| 5 | How is dynamic config or CMS content stored and read? | DRY (config) |
+| 6 | Where is the server/client boundary drawn, and what enforces it (bundler plugin, linter rule, convention)? | Single Responsibility, Dependency Inversion |
+| 7 | What is the one command that must pass before any merge (typecheck + lint + test + build)? | Prove the floor |
+| 8 | What is the canonical pattern for async state in components (loading / error / success)? | State hygiene |
+
+### Output Format
+
+Write the sub-section with this shape immediately after the last bullet of the NON NEGOTIABLE GUIDING PRINCIPLES section (before the `---` divider):
+
+```
+### Applied to this repo ([Project Name])
+
+These principles translate to concrete, pass/fail rules in this codebase:
+
+- **DRY:** [layout primitive and path]; [auth source and path]; [config/CMS pattern]; [one canonical data-access path].
+  Extract only when the abstraction preserves readability.
+- **Single Responsibility:** [what components handle]; [where I/O lives]; [split rule].
+- **Open/Closed:** [how to extend without rewriting stable flows — new entries, variants, config keys].
+- **Liskov:** [replaceable implementation rule — mocks/adapters must preserve the same contract].
+- **Interface Segregation:** [small interface examples — name the hook/service and what it exposes].
+- **Dependency Inversion:** [what components depend on instead of raw primitives].
+- **State hygiene:** [local vs. shared vs. persisted]; [status union pattern]; [reset rule].
+```
+
 ## 1) Pre-Build Checklist (Before First Feature)
-- Define domain boundaries: auth, monitoring/events, admin CMS, shared UI, **tenant isolation**.
+- Define domain boundaries: [list your app's main domains, e.g. auth, data management, admin, shared UI, tenant isolation].
 - Define tenant model: single-tenant vs. multi-tenant, user-level vs. org-level isolation, shared vs. tenant-scoped tables.
-- Define source of truth: Supabase for persisted data, Zustand for shared client state, component state for local ephemeral UI.
-- Freeze folder contracts: `src/pages`, `src/components`, `src/stores`, `src/integrations/supabase`.
+- Define source of truth: Supabase for persisted data, [state management choice] for shared client state, component state for local ephemeral UI.
+- Freeze folder contracts: `src/routes`, `src/components`, `src/server`, `src/server-fns`, `src/integrations/supabase`.
 - Design `app_config` keys and RLS before building CMS-driven pages.
 - Design RLS policies for tenant data tables before building user-facing features.
 - Define typed contracts first (query result types, union states, service interfaces).
 
 ## 2) Build Contract Checklist (Current Repo Rules)
-- All pages use `UnifiedLayout` from `src/components/layouts/`.
-- `UnifiedSidebar.tsx` remains the single sidebar for all auth states.
-- `UnifiedSidebar` nav states remain:
-  - logged out: Home, Status, Changelog, Terms (`/tos`), Sign-up, Sign-in
-  - logged in user: Dashboard, Monitors, Profile, Status, Changelog, Terms, Sign out
-  - logged in admin: Dashboard, Monitors, Profile, Admin, Status, Changelog, Terms, Sign out
-- Footer remains embedded in `UnifiedSidebar.tsx`.
-- Standalone `<Footer />` is not rendered in pages.
-- Do not reintroduce deprecated patterns: `PublicNavbar.tsx`, custom per-page wrappers, standalone page footers.
-- Page/container `max-width` is defined **once** in `UnifiedLayout.tsx`; individual pages must not redeclare or override container widths.
-- Do not add per-page `max-w-*`, `w-*`, or inline width styles that duplicate or conflict with the layout-level `max-width` setting.
+- All pages use `[LayoutComponent]` from `[path]` with a `width` variant (`sm | md | lg | xl | full`).
+- Page/container `max-width` is defined **once** in `[LayoutComponent]`'s `widthClass` map. To add a width, edit the map — never override at the page level.
+- Top navigation lives in `[path/to/Header.tsx]`. [Top-nav app / sidebar app — pick one and do not introduce the other without explicit request.]
+- Routes are TanStack Start files under `src/routes/` (flat dot-naming). Never edit `src/routeTree.gen.ts`.
+- Server-only logic lives in `src/server/*.server.ts`. RPC wrappers built with `createServerFn` live in `src/server-fns/*.functions.ts` and dynamically import their `.server.ts` sibling **inside `.handler()`**. The auto-generated `src/integrations/supabase/client.server.ts` may only be imported from `src/server/**`.
+- [List any existing shared components that must be reused rather than re-implemented — add as the project grows.]
+
+## 2.1) Lovable Dev Login Contract
+- RPC wrapper: `src/server-fns/dev-login.functions.ts` (`devLogin`).
+- Server-only implementation: `src/server/dev-login.server.ts` (`provisionDevLogin`). Imported dynamically inside the `devLogin` handler — never at module scope.
+- Origin allow-list is hard-coded to `*.lovable.app`, `*.lovable.dev`, `*.lovableproject.com`, and `localhost`. Do not expand.
+- The dev account email is fixed (`dev@lovable.local`) and its password is rotated on every call.
+- The login button on `/login` is rendered only when `window.location.hostname` matches the allow-list.
+- The dev login MUST NOT bypass RLS for the resulting session — it signs in as a normal user via `signInWithPassword`.
+
+## 2.2) Server-Function Boundary Contract (CRITICAL)
+
+This is the rule the build will reject you for if violated. The Lovable Vite preset enables TanStack Start's `import-protection` plugin with the pattern `**/server/**` denied in the **client environment**. That means **anything inside `src/server/` is treated as server-only by the bundler**, even a thin `createServerFn` wrapper. RPC wrappers must therefore live OUTSIDE `src/server/`.
+
+### Folder convention
+
+```text
+src/server/                 # SERVER-ONLY. Never importable from routes/components.
+  *.server.ts               # Implementation (DB, secrets, @tanstack/react-start/server).
+  *.types.ts                # Shared types crossing the boundary (no runtime code).
+
+src/server-fns/             # CLIENT-IMPORTABLE RPC wrappers.
+  *.functions.ts            # Thin createServerFn() wrappers. NO top-level value
+                            # imports from src/server/*.server. Use dynamic
+                            # `await import("@/server/x.server")` inside .handler().
+                            # Type-only imports from src/server/*.types are fine.
+```
+
+### Required wrapper shape
+
+```ts
+// src/server-fns/foo.functions.ts
+import { createServerFn } from "@tanstack/react-start";
+import type { FooResult } from "@/server/foo.types";
+
+export type { FooResult } from "@/server/foo.types";
+
+export const runFoo = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string }) => data)
+  .handler(async ({ data }): Promise<FooResult> => {
+    const { runFooServer } = await import("@/server/foo.server");
+    return runFooServer(data.id);
+  });
+```
+
+### Do / Don't
+
+- DO put `createServerFn` wrappers in `src/server-fns/`.
+- DO dynamically import the `.server.ts` sibling inside `.handler()`.
+- DO use `src/server/*.types.ts` for any interface/type that both sides need.
+- DO add a status check to `src/server/status.server.ts` for any new server dependency.
+- DON'T put a `createServerFn` wrapper inside `src/server/` — import-protection will reject the route file that imports it (build error: `Import denied in client environment ... Denied by file pattern: **/server/**`).
+- DON'T top-level-import a `.server.ts` module from a `.functions.ts` wrapper — the static graph analysis still sees the chain even when the runtime is server-side.
+- DON'T import `@/integrations/supabase/client.server` outside `src/server/**`. The ESLint rule + Vite plugin both block it.
+- DON'T import `@tanstack/react-start/server` outside `src/server/**` or a server-route file under `src/routes/api/`.
+
+### Debugging build failures (for future maintainers)
+
+Symptom: `[tanstack-start-core:import-protection] Import denied in client environment` referencing a file inside `src/server/`.
+
+1. **Read the trace.** It lists every hop from `src/router.tsx` to the offending import. The deepest entry is the file that violated the boundary.
+2. **Identify the offender:**
+   - If the trace ends at a route file importing `src/server/something`, move that wrapper to `src/server-fns/something.functions.ts` and update the route import.
+   - If the trace ends at a `.functions.ts` file importing a `.server.ts` sibling, convert the import to a dynamic `await import(...)` inside `.handler()` and replace any value import with a type-only `import type { ... } from "@/server/x.types"`.
+3. **Recheck transitively.** Server-route files under `src/routes/api/*.ts` are allowed to import `@tanstack/react-start/server` because they ship as server handlers. Page route files (`src/routes/foo.tsx`) are not.
+4. **Don't disable the plugin.** The Lovable preset is locked; do not add `vite.config.ts` overrides for import-protection. Fix the boundary.
+5. **Verify with a real build.** Vite dev mode does not always exercise the rollup `generateBundle` hook that runs import-protection. Always run `bun run build` to confirm the fix, not just `bun run dev`.
+6. **If the same `.functions.ts` keeps surfacing different errors,** the file is likely doing too much. Split it: `src/server-fns/x.functions.ts` (RPC), `src/server/x.server.ts` (logic), `src/server/x.types.ts` (shared types).
+
+### Why this convention exists
+
+The Lovable-managed `defineConfig()` in `vite.config.ts` enables import-protection with a folder pattern, not a filename pattern. We can't change the pattern. We can change where the RPC wrappers live. Keeping `src/server/` strictly server-only and `src/server-fns/` as the public RPC surface is the only stable shape.
+
+### Automated enforcement (CI)
+
+The boundary contract is verified on every push and PR by `.github/workflows/ci.yml` → `bun run check:architecture` (script: `scripts/check-architecture.mjs`). The script fails the build if it finds:
+
+- a `*.functions.ts` file inside `src/server/` (must move to `src/server-fns/`),
+- a top-level value import of a `*.server` module from a `.functions.ts` wrapper,
+- an import of `@/integrations/supabase/client.server` outside `src/server/**`,
+- an import of `@tanstack/react-start/server` outside `src/server/**` or `src/routes/api/**`,
+- a route/component importing `@/server/*` (must use `@/server-fns/*` or type-only `@/server/*.types`).
+
+Locally, run `bun run verify` to execute the full gate (architecture → typecheck → lint → test → build) before pushing.
+
+## 2.2) UI/UX Conventions
+
+These are app-wide interaction patterns. Use the canonical primitive instead of re-implementing the behavior per page.
+
+> **AI Agent Instruction:** As you build the app, document each reusable UI primitive below. Each entry should name the component, its file path, and its behavior contract. Follow the structure shown. Remove placeholder entries and replace with real ones as the project grows.
+
+### [Canonical primitive — e.g. Click-to-edit text]
+- **Canonical primitive:** `[ComponentName]` from `[path]`.
+- **When to use:** [describe the use case].
+- **Behavior contract:** [key behaviors — save on blur, escape to cancel, etc.].
+- **Do not:** [common misuse patterns to avoid].
+
+### Keyboard-first interaction
+- Forms submit on Enter; primary input on every screen has `autoFocus`.
+- Never trap focus in an element that has no visible exit affordance.
+- [Add app-specific keyboard shortcuts here as the project grows.]
+
+### New page QA checklist (MANDATORY before declaring a page done)
+Every newly added route under `src/routes/` MUST be QA'd against this list before the agent reports completion. Skipping any item is a §13 violation.
+
+1. **Layout:** wrapped in `[LayoutComponent]` with an explicit `width` variant. No per-page `max-w-*` overrides.
+2. **Breadcrumbs:** `breadcrumbs` prop passed if the layout supports it (current page last, no `to`).
+3. **Head/SEO:** route exports `head()` with a unique `<title>` (<60 chars) and meta `description` (<160 chars). No reuse of the home page metadata.
+4. **Auth gating:** if the route reads user data, it redirects unauthenticated users via the auth hook. Admin routes additionally wait for `roleLoaded` before redirecting.
+   - **Async-auth race rule:** Never call `navigate(...)` synchronously after `supabase.auth.signInWithPassword` / `signUp` / `signInWithOtp` resolves. The auth context updates asynchronously via `onAuthStateChange`; a synchronous navigate makes the destination route mount with `user=null` and bounce back to `/login`. Always rely on the destination route's `useEffect([user, loading])` redirect.
+5. **Loading / empty / error states:** every async surface renders all three. No bare spinners that never resolve.
+6. **Keyboard:** primary input has `autoFocus`; forms submit on Enter; destructive actions confirm.
+7. **Server access:** any DB / secret access goes through `src/server-fns/*.functions.ts` (RPC wrapper) backed by `src/server/*.server.ts` (implementation). Never import `client.server.ts` or any `*.server.ts` file from the route file.
+8. **Type-check + lint:** `bun run typecheck` and `bun run lint` pass with no new warnings tied to the new file.
+9. **Smoke test:** navigate the preview to the new route and confirm first-paint render + one primary interaction.
+10. **System status:** new server functions are added as a check in `src/server/status.server.ts` so `/status` reflects the new dependency.
+
+### System status page
+- `/status` runs the full self-test suite + Postgres connectivity + RLS leak probes.
+- **Cadence:** results are cached for **15 minutes**. Page loads return the cached snapshot — never auto-run on every visit.
+- **Admin-only re-run:** the "Re-run now" button is rendered only for admins. The server function enforces admin via bearer-token + `has_role` RPC; non-admin `force=true` is ignored. Do not weaken either side of this check.
+- Include outbound links to `https://status.lovable.dev` and `https://status.supabase.com` (open in new tab).
+
+### Changelog viewer
+- `/changelog` renders `CHANGELOG.md` with pagination and search/filter. Linked from the footer next to the system-status link.
+
+### Admin gating
+- Admin-only pages MUST wait for `roleLoaded` from the auth hook before deciding to redirect. Redirecting on `isAdmin === false` while role is still loading produces a flash-and-bounce.
 
 ## 3) CMS Content Checklist (`app_config`)
-- CMS values are JSON strings in `app_config` table.
-- Keys remain: `tos_html` (Terms content), `footer_html` (Footer content).
-- All CMS reads/writes go through `src/services/cms-config.ts` service layer (DRY + SRP).
-- Service exposes typed interface: `getConfig(key)`, `setConfig(key, value)` (admin-only).
-- Service handles JSON parse/stringify internally; consumers receive typed data.
-- Components/pages use `useCmsConfig(key)` hook, never direct Supabase calls (Dependency Inversion).
-- Hook returns `{ data, loading, error }` with proper async state modeling (see Section 5).
-- RLS enforced: public read, admin-only write (cross-ref Section 10).
-
-## 4) State Management Defaults Checklist
-- Auth source of truth is `useAuthStore()` in `src/stores/auth-store.ts`.
-- Admin checks use `isAdmin()`.
-- Logout uses `signOut()`.
-- Tenant context available via `useAuthStore()` (e.g., `currentUserId`, `currentOrgId` if org-level tenancy).
-- All Supabase queries automatically filter by tenant context (via RLS policies).
-- No hardcoded user/org IDs in components or services.
-- Events feed uses `src/stores/events-store.ts` with `MAX_EVENTS = 500`.
-- No duplicated writable entity state across component state + store + Supabase.
-
-## 5) Design Rules (Required Paragraphs)
-**DRY:** In this stack, each behavior must have one canonical implementation: one layout system, one auth state source (`useAuthStore()`), one CMS storage pattern (`app_config` JSON), one page/container `max-width` definition (in `UnifiedLayout.tsx`), and one data-access path per feature; when duplicate logic appears in multiple pages/components, extract only after confirming the abstraction preserves readability and does not hide Supabase query intent.
-
-**S - Single Responsibility:** Keep React components focused on rendering and user interaction, move Supabase I/O into service functions/hooks, and keep stores responsible for state transitions; split files that mix view rendering, remote orchestration, and domain rules.
-
-**O - Open/Closed:** Extend behavior through composition (feature modules, store actions, layout variants, feature flags) instead of rewriting stable flows; new work should plug into existing contracts without breaking current consumers.
-
-**L - Liskov Substitution:** Any replaceable implementation (mock service, alternate adapter, layout variant) must preserve the same input/output and side-effect expectations so call sites never branch on concrete type.
-
-**I - Interface Segregation:** Expose small task-specific interfaces (for example auth session, CMS config client, monitor event reader) so pages/hooks depend only on the methods they use.
-
-**D - Dependency Inversion:** Depend on feature-boundary abstractions (typed services/interfaces) rather than concrete Supabase/browser primitives inside UI components, improving testability and replacement.
-
-**State hygiene:** Keep local UI state local, shared cross-page state in scoped Zustand slices, and persisted truth in Supabase; model async workflows with explicit status unions (`idle | loading | success | error`), reset transient state on route/identity changes, and avoid duplicate writable copies of the same entity.
+- [Choose one and delete the other:]
+- **Not applicable.** No CMS surface exists. If one is added later, route reads/writes through a `src/services/cms-config.ts` service and a `useCmsConfig` hook, with public read + admin-only write RLS.
+- **Applicable.** All CMS content is stored in `public.app_config` as JSON keys. Access via `useCmsConfig` hook and `src/services/cms-config.ts`. Public read, admin-only write enforced by RLS. Keys defined: [list keys here].
 
 ## 6) FSM Decision Matrix + Trigger Checklist
 | Situation | Recommended Pattern |
@@ -203,11 +433,11 @@ type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
 ```
 
 ## 8) Post First Build Checklist
-- Critical journeys pass in local + preview (auth, dashboard, monitor lifecycle, admin CMS edit/publish).
+- Critical journeys pass in local + preview (auth, [list your app's critical journeys], admin CMS edit/publish if applicable).
 - Verification commands pass: `bun run typecheck`, `bun run lint`, `bun run test`, `supabase db diff`.
 - Security checks pass: RLS on writable tables, admin-only writes verified.
 - Multi-tenant isolation verified (cross-ref Section 10.5):
-  - User A cannot read/write User B's data (monitors, events, profiles, etc.)
+  - User A cannot read/write User B's data
   - Unauthenticated users cannot access any tenant data
   - Cross-tenant queries are blocked by RLS policies
   - Admin access scoped correctly (global config vs. tenant data)
@@ -224,56 +454,47 @@ type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
 - Record violations/lessons in `CHANGELOG.md` with `#lessonslearned`.
 - Repeat at least once per release cycle.
 
+## 4) State Management Defaults Checklist
+- Auth source of truth is `[authHook]` from `[path]` ([React Context / Zustand — note if one is intentionally excluded and why]).
+- Admin checks use the `isAdmin` boolean from the auth hook, backed server-side by the `has_role()` SQL function.
+- Logout uses `signOut()` from the auth hook.
+- All Supabase queries are scoped by RLS, not by manual `WHERE user_id = ?` clauses in client code.
+- No hardcoded user IDs anywhere.
+- Local UI state stays local; cross-route state goes through context or a server-fn refetch.
+
 ## 10) Supabase RLS Requirements Checklist
-- `app_config` public read is enabled.
-- `app_config` writes are restricted to authenticated admins (`is_admin(auth.uid())`).
-- RLS policies are verified before adding new `app_config` keys.
+- All tables containing user content ([list your user-data tables, e.g. `items`, `profiles`, `user_roles`]) have RLS enabled.
+- Admin gates use the security-definer function `public.has_role(auth.uid(), 'admin')`. Never check roles from a profile/users column.
+- Helper functions (`has_role`, and any others you add) are `SECURITY DEFINER` with `search_path = public` and have `EXECUTE` granted to `anon` + `authenticated`.
+- [Define whether public read is intentional for your app or whether all reads require auth — document the decision here.]
+- Never reference `auth.users` via foreign key — use `public.profiles` instead.
 
 ## 10.5) Multi-Tenant Isolation Checklist
-
-### Tenant Model Definition:
-- Tenant scope defined: user-level (each user owns their data), org-level (users share org data), or hybrid.
-- Tenant context stored in: `auth.uid()` for user-level, `auth.jwt() ->> 'org_id'` for org-level, or separate tenant table.
-- Shared vs. tenant-scoped tables documented (e.g., `app_config` is shared, `monitors`/`events` are tenant-scoped).
-
-### RLS Policies (Tenant Data):
-- All tenant data tables have RLS enabled (monitors, events, profiles, user-specific settings, etc.).
-- Policies use `auth.uid()` or `auth.jwt() ->> 'org_id'` for isolation.
-- SELECT policies prevent cross-tenant reads: `WHERE user_id = auth.uid()` or equivalent.
-- INSERT/UPDATE/DELETE policies prevent cross-tenant writes.
-- No table allows cross-tenant SELECT/INSERT/UPDATE/DELETE without explicit admin override.
-- Admin override policies (if needed) are explicitly documented and audited.
-
-### Application Layer:
-- Tenant context available in `useAuthStore()` (e.g., `currentUserId`, `currentOrgId`).
-- All Supabase queries automatically filter by tenant (via RLS, not manual WHERE clauses).
-- No hardcoded user/org IDs in components, services, or hooks.
-- Service layer functions accept tenant context from auth store, never from props/params.
-
-### Testing & Verification:
-- Cross-tenant read test: Create User A and User B, verify User A cannot SELECT User B's monitors/events.
-- Cross-tenant write test: Verify User A cannot INSERT/UPDATE/DELETE User B's data.
-- Unauthenticated access test: Verify no tenant data is accessible without valid auth token.
-- Admin scope test: Verify admins can access only intended scopes (global `app_config` vs. tenant data).
-- RLS policy coverage: 100% of tables with user/tenant data have RLS enabled.
-- Policy audit: Review all RLS policies quarterly for correctness and completeness.
+- Tenant scope is [**user-level** / **org-level** / **none** — pick one and describe]: [describe how ownership is recorded, e.g. `owner_id` FK to `auth.uid()`].
+- Owner-only mutations are enforced by RLS using [describe your helper functions].
+- [Describe any collaboration / open-access patterns and how they're RLS-enforced.]
+- No org-level tenancy unless explicitly designed. If introduced later, add an `org_id` column + matching RLS before shipping.
 
 ## 11) Theme/Branding (Future-Ready) Checklist
-- Check `// Future:` comments before adding branding/layout logic.
-- `UnifiedSidebar.tsx` is the extension point for logo/product/colors.
-- `UnifiedLayout.tsx` is the extension point for layout variants.
-- `UnifiedLayout.tsx` is the single source of truth for page/container `max-width`; change the width setting there, never in individual page components.
-- Planned components (`TopNavLayout.tsx`, `MobileDrawer.tsx`, `LayoutPicker.tsx`) are added only when explicitly requested.
+- `[LayoutComponent]` is the single source of truth for page/container `max-width` and layout variants.
+- `[Header component path]` is the extension point for logo/product/colors.
+- [This is a top-nav / sidebar app — do not introduce the other pattern without explicit request.]
+- **Site name / brand label must never be hardcoded in UI strings, `<title>` tags, meta descriptions, JSON-LD, or fallback constants.** Always source it from a programmatic token (e.g., a build-time `VITE_SITE_NAME` env var or `app_config` key). If the token is unavailable, use a generic fallback (e.g., "Site") — never a specific product name. This prevents stale-brand flashes during hydration and allows re-branding without code changes.
 
 ## 12) Key Paths
+- Routes (TanStack Start, file-based): `src/routes/`
+- Auto-generated route tree (DO NOT EDIT): `src/routeTree.gen.ts`
 - Layouts: `src/components/layouts/`
-- Pages: `src/pages/`
-- UI: `src/components/ui/`
-- Stores: `src/stores/`
-- Services: `src/services/` (CMS config, monitor service, etc.)
-- Supabase client: `src/integrations/supabase/`
-- Edge functions: `supabase/functions/`
-- Off-road guides: `OFF-ROAD/` (advanced patterns not part of core architecture)
+- Shared UI primitives (shadcn): `src/components/ui/`
+- Domain components: `src/components/`
+- Auth context: `[path to auth hook/context]`
+- App-level helpers: `src/lib/`
+- Server-function RPC wrappers (client-importable): `src/server-fns/*.functions.ts`
+- Server-only implementation (NEVER client-importable): `src/server/*.server.ts`
+- Shared types crossing the boundary: `src/server/*.types.ts`
+- Supabase clients (auto-generated, DO NOT EDIT): `src/integrations/supabase/{client,client.server,types,auth-middleware}.ts`
+- Migrations: `supabase/migrations/`
+- Edge functions (if any): `supabase/functions/`
 
 ## 12.5) Working Outside of Lovable AI Chat (Dev Testing Workflow)
 
@@ -321,7 +542,7 @@ When a spike proves out and is ready for production:
 5. Document: log the graduation in `CHANGELOG.md`.
 
 ### AI Agent Context Awareness:
-> **AI Agent Instruction:** If you detect the user is working on Supabase testing tasks and `OFF-ROAD/SUPABASE-TEMP-DB.md` exists in your context window, proactively suggest using the sandbox table pattern instead of creating temporary tables or deploying edge functions. Example prompt: "I notice you're testing [X]. Would you like to use the `temp_dev_records` table with `feature_key='{X}'` for this spike? It's already set up with RLS policies and reset utilities."
+> **AI Agent Instruction:** If you detect the user is working on Supabase testing tasks and `OFF-ROAD/SUPABASE-TEMP-DB.md` exists in your context window, proactively suggest using the sandbox table pattern instead of creating temporary tables or deploying edge functions.
 
 ### AI Agent Troubleshooting Protocol:
 > **AI Agent Instruction:** When sandbox setup or testing fails, use the escalation checklist from OFF-ROAD/SUPABASE-TEMP-DB.md "Lovable Back-and-Forth Scenarios" section:
@@ -418,7 +639,7 @@ This keeps AGENTS.md focused on current architecture rules and reduces context o
 
 # DASHBOARD.md - Build Cycle Compliance Dashboard
 **Version:** 1.0
-**Last Updated:** 2026-02-08
+**Last Updated:** [Date]
 **Last Audited:** _not yet audited_
 **Current Build Cycle:** _not started_
 
@@ -439,15 +660,14 @@ This is the **living status tracker** for each build cycle. Agents and humans ch
 | # | Section | Verify | Build | QA | Human |
 |---|---------|--------|:-----:|:--:|:-----:|
 | 1 | Pre-Build | Domains, folders, tenant model, typed contracts defined | [ ] | [ ] | [ ] |
-| 2 | Build Contract | `UnifiedLayout` on all pages, single `max-width` in `UnifiedLayout.tsx`, no deprecated patterns | [ ] | [ ] | [ ] |
-| 3 | CMS Content | All CMS via `useCmsConfig` + service layer, no direct Supabase | [ ] | [ ] | [ ] |
-| 4 | State Mgmt | Auth via `useAuthStore`, tenant context available, no duplicate state | [ ] | [ ] | [ ] |
-| 5 | Design Rules | DRY + SOLID + state hygiene applied | [ ] | [ ] | [ ] |
+| 2 | Build Contract | Layout component on all pages, single `max-width` definition, no deprecated patterns | [ ] | [ ] | [ ] |
+| 3 | CMS Content | All CMS via service layer + hook, no direct Supabase | [ ] | [ ] | [ ] |
+| 4 | State Mgmt | Auth via canonical hook, no duplicate state | [ ] | [ ] | [ ] |
 | 6 | FSM | Correct pattern per complexity tier, no impossible states | [ ] | [ ] | [ ] |
 | 7 | Observability | Async boundaries emit telemetry, errors normalize to `AppError` | [ ] | [ ] | [ ] |
 | 8 | Post Build | `typecheck`/`lint`/`test` green, journeys pass, RLS + tenant isolation verified | [ ] | [ ] | [ ] |
 | 9 | Continuous Audit | Runtime signals reviewed, fixes shipped, changelog updated | [ ] | [ ] | [ ] |
-| 10 | RLS | `app_config` public read, admin-only write, policies current | [ ] | [ ] | [ ] |
+| 10 | RLS | User-data tables have RLS enabled, admin-only writes verified, policies current | [ ] | [ ] | [ ] |
 | 10.5 | Multi-Tenant | Tenant isolation enforced, cross-tenant access blocked, 100% RLS coverage | [ ] | [ ] | [ ] |
 | 11 | Theme | Extension points untouched, no premature branding | [ ] | [ ] | [ ] |
 | 12 | Key Paths | File structure matches contracted paths | [ ] | [ ] | [ ] |
@@ -460,11 +680,11 @@ This is the **living status tracker** for each build cycle. Agents and humans ch
 
 > Update this section after each release. It captures the current state of key architectural decisions.
 
-- **Layout/navigation:** Unified layout system via `src/components/layouts/` (`UnifiedLayout`, `UnifiedSidebar`).
-- **CMS:** `app_config` keys `tos_html` and `footer_html`, accessed via `useCmsConfig` + `src/services/cms-config.ts`.
-- **State:** Auth in `src/stores/auth-store.ts`, events in `src/stores/events-store.ts`.
-- **Data security:** RLS on `app_config` and tenant-scoped tables; tenant isolation enforced by policy.
-- **Observability baseline:** Structured async boundary logging + normalized `AppError` contract.
+- **Layout/navigation:** [Describe layout system and nav style.]
+- **CMS:** [Describe CMS approach or "not applicable".]
+- **State:** [Describe auth hook/context and any shared state stores.]
+- **Data security:** [Describe RLS coverage and tenant isolation approach.]
+- **Observability baseline:** [Describe logging and error contract status.]
 - **Snapshot fields to maintain each release:** Active routes, key tables, edge functions, and open architecture decisions.
 
 ---
@@ -504,7 +724,7 @@ This is the **living status tracker** for each build cycle. Agents and humans ch
 
 # QUICKHELP.md - First-Layer Help & FAQ
 **Version:** 1.0
-**Last Updated:** 2026-02-08
+**Last Updated:** [Date]
 
 Start here before diving into the full architecture guide. Most common tasks and questions are answered below with links to detailed rules when needed.
 
@@ -517,7 +737,7 @@ All pages use a single unified layout system. Follow the build contract for page
 → [AGENTS.md §2 — Build Contract](./AGENTS.md#2-build-contract-checklist-current-repo-rules)
 
 ### Set or update page/screen width
-Page `max-width` is controlled from a single place (`UnifiedLayout.tsx`). Never add per-page width overrides.
+Page `max-width` is controlled from a single place. Never add per-page width overrides.
 → [AGENTS.md §2 — Build Contract](./AGENTS.md#2-build-contract-checklist-current-repo-rules)
 → [AGENTS.md §11 — Theme/Branding](./AGENTS.md#11-themebranding-future-ready-checklist)
 
@@ -534,7 +754,7 @@ Follow the recovery protocol: isolate the change, fix the smallest root cause, r
 → [AGENTS.md §0.4 — Build Break Recovery](./AGENTS.md#04-build-break-recovery-protocol)
 
 ### Handle authentication or user state
-Auth has a single source of truth via a centralized store. All tenant context flows from there.
+Auth has a single source of truth via the canonical auth hook. All tenant context flows from there.
 → [AGENTS.md §4 — State Management](./AGENTS.md#4-state-management-defaults-checklist)
 
 ### Add security policies for user data
@@ -604,4 +824,3 @@ In the changelog, using the standard entry format with `#lessonslearned` tag.
 → [AGENTS.md §13](./AGENTS.md#13-violations---changelogmd-policy) | [CHANGELOG.md](./CHANGELOG.md)
 
 <!-- END QUICKHELP TEMPLATE -->
-
